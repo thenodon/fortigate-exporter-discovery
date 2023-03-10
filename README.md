@@ -49,5 +49,13 @@ Two environment variables must be set.
 configuration. Each adom will have its own file.
 
 
+# Run 
+
+```shell
+pip install fortigate-exporter-discovery
+FMG_DISCOVERY_CONFIG=config.yml
+FMG_PROMETHEUS_SD_FILE_DIRECTORY=/etc/prometheus/file_sd/fortigate
+python -m fmg_discovery
+```
 
 
