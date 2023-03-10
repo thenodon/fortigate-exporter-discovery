@@ -45,7 +45,8 @@ class FMG:
         self.credentials = {'host': config.get('fmg').get('host'), 'username': config.get('fmg').get('username'),
                             'password': config.get('fmg').get('password')}
         self.fmg_configuration = config
-        self.request_url = "https://" + self.credentials["host"] + "/jsonrpc"
+        #self.request_url = "https://" + self.credentials["host"] + "/jsonrpc"
+        self.request_url = self.credentials['host'] + "/jsonrpc"
         self.session = None
         #self.all_devices = []
 
