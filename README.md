@@ -58,4 +58,41 @@ FMG_PROMETHEUS_SD_FILE_DIRECTORY=/etc/prometheus/file_sd/fortigate
 python -m fmg_discovery
 ```
 
+# Prometheus job configuration
+
+Example:
+
+```yaml
+  - job_name: 'fortigate_exporter'
+    metrics_path: /probe
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/fortigate/*.yml
+    params:
+      # If profile is not part of your labels from the discovery
+      profile:
+      - fs124e
+    relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [token]
+      target_label: __param_token
+    - source_labels: [__param_target]
+      regex: '(?:.+)(?::\/\/)([^:]*).*'
+      target_label: instance
+    - target_label: __address__
+      replacement: '[::1]:9710'
+    - action: labeldrop
+      regex: token
+```
+Make sure to use the last labeldrop on the `token` label so that the tokens is not be part of your time series.
+> Since `token` is a label it will be shown in the Prometheus webgui at `http://<your prometheus>:9090/targets`.
+>
+> **Make sure you protect your Prometheus if you add the token part of your prometheus config**
+>
+> Some options to protect Prometheus:
+> - Only expose UI to localhost --web.listen-address="127.0.0.1:9090"
+> - Basic authentication access - https://prometheus.io/docs/guides/basic-auth/
+> - It is your responsibility!
+
 
