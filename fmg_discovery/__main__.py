@@ -52,12 +52,9 @@ if __name__ == "__main__":
                 prometheus_file_sd[adom_name] = []
             prometheus_file_sd[adom_name].append(fw.as_prometheus_file_sd_entry())
 
+        # Generate configuration
         with open(f"{os.getenv(FMG_PROMETHEUS_SD_FILE_DIRECTORY)}/{adom_name}.yaml", 'w') as config_file:
             try:
-                # Converts yaml document to python object
                 config = yaml.safe_dump(prometheus_file_sd[adom_name], config_file)
             except yaml.YAMLError as err:
                 print(err)
-
-    # Generate
-    print("hello")
