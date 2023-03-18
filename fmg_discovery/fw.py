@@ -41,4 +41,4 @@ class Fortigate:
         return labels
 
     def as_prometheus_file_sd_entry(self) -> Dict[str, Any]:
-        return {'target': [f"https://{self.ip}:{self.port}"], 'labels': self.as_labels()}
+        return {'targets': [f"https://{self.ip}:{self.port}"], 'labels': self.as_labels()}
