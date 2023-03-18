@@ -35,5 +35,5 @@ setup(
     zip_safe=False,
     description="A Prometheus file discovery for Fortigate's based on FortiManager",
     install_requires=read('requirements.txt').split(),
-    python_requires='>=3.8',
+    python_requires='>=3.6',
 )
