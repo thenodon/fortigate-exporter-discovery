@@ -18,26 +18,6 @@
     along with fortigate-exporter-discovery.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-import argparse
-import os
-import yaml
 
-from fmg_discovery.file_service_discovery import file_service_discovery
-from fmg_discovery.fmg_api import FMG
-from fmg_discovery.environments import FMG_DISCOVERY_CONFIG, FMG_PROMETHEUS_SD_FILE_DIRECTORY
-from typing import Dict, Any, List
-
-from fmg_discovery.http_service_discovery import http_service_discovery
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Prometheus Fortigate service discovery')
-    parser.add_argument('--server', action='store_true',
-                        help='Start in http service discovery mode',
-                        dest='server')
-    args = vars(parser.parse_args())
-
-    if not args['server']:
-        file_service_discovery()
-    else:
-        http_service_discovery()
+FMG_DISCOVERY_CONFIG = 'FMG_DISCOVERY_CONFIG'
+FMG_PROMETHEUS_SD_FILE_DIRECTORY = 'FMG_PROMETHEUS_SD_FILE_DIRECTORY'
