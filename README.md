@@ -22,22 +22,21 @@ Example:
 
 ```yaml
 fmg:
-  # The host name of the fmg - 
+  # The url, username and password of the Fortimanager  
   host: "https://fmg.foo.com"
   username: fmg_foo
   password: fmg_foo_password
 
   adoms:
     - name: SDWAN_Foo
-      # Same api key for all fortigate in the same adom
-      #apikey: XYZ
-      #port: 44343
-      # Additional labels
+      # Additional labels that will be added to all metrics
       labels:
         customer: Foo
-      # This is common for all fortigates in the same adom
+      # This is common for all Fortigates in the same adom
       fortigate:
+        # The api token of the Fortigates
         token: XYZ
+        # The port where the Fortigates expose the API
         port: 44343
         # Profile is a named entry in fortigate-exporter fortigate-key.yaml file to get probes exclude/includes
         profile: common
