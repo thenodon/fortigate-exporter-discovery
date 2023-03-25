@@ -19,7 +19,6 @@
 
 """
 
-
 import json
 
 from typing import List, Dict, Any
@@ -30,7 +29,6 @@ import logging
 from fmg_discovery.fw import Fortigate
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 
 log = logging.getLogger(__name__)
 
@@ -45,10 +43,8 @@ class FMG:
         self.credentials = {'host': config.get('fmg').get('host'), 'username': config.get('fmg').get('username'),
                             'password': config.get('fmg').get('password')}
         self.fmg_configuration = config
-        #self.request_url = "https://" + self.credentials["host"] + "/jsonrpc"
         self.request_url = self.credentials['host'] + "/jsonrpc"
         self.session = None
-        #self.all_devices = []
 
     def _fmg_login(self):
         """
@@ -81,7 +77,7 @@ class FMG:
         # Get all Firewalls in this ADOM
         if not self.fmg_configuration['fmg']['adoms']:
             log.warning(f"ADOM is not configured. No data received from FortiManager.")
-            return []
+            return {}
         # Loop for each adom
         all_adom_devices = {}
         for adom in self.fmg_configuration['fmg']['adoms']:
@@ -120,7 +116,7 @@ class FMG:
         filtered_adoms = []
         adoms = self._get_adoms()
         for adom in adoms:
-            if 'mr' in adom and adom['mr'] == 4:
+            if 'mr' in adom and adom['mr'] == '4':
                 filtered_adoms.append(adom)
         return filtered_adoms
 
@@ -168,8 +164,8 @@ class FMG:
             response_data = response_raw.json()
             if response_data["result"][0]["status"]["code"] != 0:
                 log.error(f"Data from API {str(response_data['result'][0]['url'])} "
-                              f"returned code: {str(response_data['result'][0]['status']['code'])} "
-                              f"with message: {str(response_data['result'][0]['status']['message'])}")
+                          f"returned code: {str(response_data['result'][0]['status']['code'])} "
+                          f"with message: {str(response_data['result'][0]['status']['message'])}")
             else:
                 devices = response_data["result"][0]["data"]
                 log.info(f"{adom} - found {len(devices)} firewalls.")
