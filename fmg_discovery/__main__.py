@@ -31,7 +31,7 @@ if __name__ == "__main__":
                         dest='server')
     args = vars(parser.parse_args())
 
-    if not args['server']:
-        file_service_discovery()
-    else:
+    if args['server']:
         http_service_discovery()
+    else:
+        file_service_discovery()
