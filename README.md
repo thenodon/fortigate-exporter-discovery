@@ -6,7 +6,7 @@ fortigate-exporter-discovery
 # Overview
 
 The fortigate-exporter-discovery is a Prometheus discovery tool that use a Fortimanager instance
-to get fortigate's based on a adom. 
+to get fortigate's based on an adom. 
 It works both for file and http service discovery.
 
 The tool work with the [fortigate-exporter](https://github.com/bluecmd/fortigate_exporter).
@@ -54,7 +54,9 @@ configuration. Each adom will have its own file.
 - FMG_DISCOVERY_BASIC_AUTH_ENABLED - use basic auth if set to anything, default `false`
 - FMG_DISCOVERY_BASIC_AUTH_USERNAME - the username 
 - FMG_DISCOVERY_BASIC_AUTH_PASSWORD - the password 
+- FMG_DISCOVERY_CACHE_TTL - the ttl in seconds to keep the result from Fortimanager in cache, default `60`
 
+> FMG_DISCOVERY_CACHE_TTL is a measure to secure the Fortimanager from an api request storm.
 
 # Run 
 
