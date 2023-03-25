@@ -24,7 +24,7 @@ import yaml
 
 from fmg_discovery.file_service_discovery import file_service_discovery
 from fmg_discovery.fmg_api import FMG
-from fmg_discovery.environments import FMG_DISCOVERY_CONFIG, FMG_PROMETHEUS_SD_FILE_DIRECTORY
+from fmg_discovery.environments import FMG_DISCOVERY_CONFIG, FMG_DISCOVERY_PROMETHEUS_SD_FILE_DIRECTORY
 from typing import Dict, Any, List
 
 from fmg_discovery.http_service_discovery import http_service_discovery

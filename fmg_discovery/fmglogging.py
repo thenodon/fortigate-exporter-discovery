@@ -28,7 +28,7 @@ import sys
 from typing import Any
 
 from dateutil.tz import tzutc
-
+from fmg_discovery.environments import FMG_DISCOVERY_LOG_LEVEL, FMG_DISCOVERY_LOG_FILE
 
 MESSAGE = 'message'
 
@@ -127,26 +127,26 @@ class Log:
         logger = logging.getLogger(name)
         try:
 
-            if os.getenv('EXPORTER_LOG_FILE'):
-                hdlr = logging.FileHandler(os.getenv('EXPORTER_LOG_FILE'))
+            if os.getenv(FMG_DISCOVERY_LOG_FILE):
+                hdlr = logging.FileHandler(os.getenv(FMG_DISCOVERY_LOG_FILE))
             else:
                 hdlr = logging.StreamHandler(sys.stdout)
 
             hdlr.setFormatter(formatter)
             logger.addHandler(hdlr)
 
-            logger.setLevel(os.getenv('EXPORTER_LOG_LEVEL', 'WARNING'))
+            logger.setLevel(os.getenv(FMG_DISCOVERY_LOG_LEVEL, 'WARNING'))
 
         except Exception:
 
             hdlr = logging.StreamHandler(sys.stdout)
-            if os.getenv('EXPORTER_LOG_FILE'):
-                hdlr = logging.FileHandler(os.getenv('EXPORTER_LOG_FILE'))
+            if os.getenv(FMG_DISCOVERY_LOG_FILE):
+                hdlr = logging.FileHandler(os.getenv(FMG_DISCOVERY_LOG_FILE))
 
             hdlr.setFormatter(formatter)
             logger.addHandler(hdlr)
             logger.setLevel('WARNING')
-            if os.getenv('EXPORTER_LOG_LEVEL'):
-                logger.setLevel(os.getenv('EXPORTER_LOG_LEVEL'))
+            if os.getenv(FMG_DISCOVERY_LOG_LEVEL):
+                logger.setLevel(os.getenv(FMG_DISCOVERY_LOG_LEVEL))
 
         return logger

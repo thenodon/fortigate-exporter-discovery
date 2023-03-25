@@ -5,8 +5,9 @@ fortigate-exporter-discovery
 ------------------------
 # Overview
 
-The fortigate-exporter-discovery is a Prometheus file discovery tool that use a Fortimanager instance
-to get fortigate's based on a adom.
+The fortigate-exporter-discovery is a Prometheus discovery tool that use a Fortimanager instance
+to get fortigate's based on a adom. 
+It works both for file and http service discovery.
 
 The tool work with the [fortigate-exporter](https://github.com/bluecmd/fortigate_exporter).
 > It requires that the following pull request is accepted https://github.com/bluecmd/fortigate_exporter/pull/206 or 
@@ -44,20 +45,43 @@ fmg:
 
 Two environment variables must be set.
 
-- FMG_DISCOVERY_CONFIG - the path to the above config file, default is ./config.yml
-- FMG_PROMETHEUS_SD_FILE_DIRECTORY - the output directory for the file discovery files used in the your Prometheus
+- FMG_DISCOVERY_CONFIG - the path to the above config file, default is `./config.yml`
+- FMG_DISCOVERY_PROMETHEUS_SD_FILE_DIRECTORY - the output directory for the file discovery files used in your Prometheus
 configuration. Each adom will have its own file.
+- FMG_DISCOVERY_LOG_LEVEL - the log level, default `WARNING`
+- FMG_DISCOVERY_LOG_FILE - the log file, default `stdout`
+- FMG_DISCOVERY_HOST - the ip to expose the exporter on, default `0.0.0.0` - only applicable if running in server mode
+- FMG_DISCOVERY_PORT - the port to expose the exporter on, default `9693`
+- FMG_DISCOVERY_BASIC_AUTH_ENABLED - use basic auth if set to anything, default `false`
+- FMG_DISCOVERY_BASIC_AUTH_USERNAME - the username 
+- FMG_DISCOVERY_BASIC_AUTH_PASSWORD - the password 
 
 
 # Run 
 
+## File service discovery
 ```shell
 pip install fortigate-exporter-discovery
 FMG_DISCOVERY_CONFIG=config.yml
-FMG_PROMETHEUS_SD_FILE_DIRECTORY=/etc/prometheus/file_sd/fortigate
+FMG_DISCOVERY_PROMETHEUS_SD_FILE_DIRECTORY=/etc/prometheus/file_sd/fortigate
 python -m fmg_discovery
 ```
 
+## Http service discovery
+```shell
+pip install fortigate-exporter-discovery
+FMG_DISCOVERY_CONFIG=config.yml
+FMG_DISCOVERY_BASIC_AUTH_ENABLED=true
+FMG_DISCOVERY_BASIC_AUTH_USERNAME=foo
+FMG_DISCOVERY_BASIC_AUTH_PASSWORD=bar
+FMG_DISCOVERY_LOG_LEVEL=INFO
+python -m fmg_discovery --server
+```
+Test by curl
+
+```shell
+curl -ufoo:bar localhost:9693/prometheus-sd-targets
+```
 # Prometheus job configuration
 
 Example:
