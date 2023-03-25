@@ -19,6 +19,7 @@
 
 """
 import os
+from typing import List, Dict, Any
 
 import yaml
 
@@ -56,6 +57,6 @@ def file_service_discovery():
         # Generate configuration
         with open(f"{os.getenv(FMG_DISCOVERY_PROMETHEUS_SD_FILE_DIRECTORY)}/{adom_name}.yaml", 'w') as config_file:
             try:
-                config = yaml.safe_dump(prometheus_file_sd[adom_name], config_file)
+                yaml.safe_dump(prometheus_file_sd[adom_name], config_file)
             except yaml.YAMLError as err:
                 print(err)
