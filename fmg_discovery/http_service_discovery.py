@@ -23,7 +23,8 @@ import secrets
 import json
 import os
 import sys
-from typing import List, Any, Annotated
+import time
+from typing import List, Any, Annotated, Dict
 
 import uvicorn
 import yaml
@@ -37,7 +38,8 @@ from fmg_discovery.environments import FMG_DISCOVERY_CONFIG
 from fmg_discovery.fmg_api import FMG
 from fmg_discovery.fmglogging import Log
 from fmg_discovery.environments import FMG_DISCOVERY_BASIC_AUTH_USERNAME, FMG_DISCOVERY_BASIC_AUTH_PASSWORD, \
-    FMG_DISCOVERY_BASIC_AUTH_ENABLED, FMG_DISCOVERY_LOG_LEVEL, FMG_DISCOVERY_HOST, FMG_DISCOVERY_PORT
+    FMG_DISCOVERY_BASIC_AUTH_ENABLED, FMG_DISCOVERY_LOG_LEVEL, FMG_DISCOVERY_HOST, FMG_DISCOVERY_PORT, \
+    FMG_DISCOVERY_CACHE_TTL
 
 FORMAT = 'timestamp="%(asctime)s" level=%(levelname)s module="%(module)s" %(message)s'
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
@@ -113,6 +115,25 @@ class Config(metaclass=Singleton):
         return self.config
 
 
+class Cache(metaclass=Singleton):
+
+    def __init__(self):
+        self._ttl: int = int(os.getenv(FMG_DISCOVERY_CACHE_TTL, "60"))
+        self._expire: int = 0
+        self._cache: Dict[str, Any] = {}
+
+    def put(self, data: Dict[str, Any]):
+        self._expire = time.time() + self._ttl
+        self._cache = data
+
+    def get(self):
+        if time.time() < self._expire:
+            log.info_fmt({"operation": "cache", "hit": True})
+            return self._cache
+        log.info_fmt({"operation": "cache", "hist": False})
+        return {}
+
+
 @app.get('/')
 def hello_world():
     return Response("fmg_discovery alive!", status_code=status.HTTP_200_OK, media_type=MIME_TYPE_TEXT_HTML)
@@ -120,9 +141,12 @@ def hello_world():
 
 @app.get('/prometheus-sd-targets')
 def discovery(auth: Annotated[str, Depends(basic_auth)]):
-
-    fmg = FMG(Config().get())
-    fws = fmg.get_fmg_devices()
+    cache = Cache()
+    fws = cache.get()
+    if not fws:
+        fmg = FMG(Config().get())
+        fws = fmg.get_fmg_devices()
+        cache.put(fws)
 
     prometheus_sd: List[Any] = []
     for adom_name, fws in fws.items():
