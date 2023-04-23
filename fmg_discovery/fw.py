@@ -50,7 +50,7 @@ class Fortigate:
         if not self.ip:
             cause = f"Missing ip {cause}"
             valid = False
-        if not ipaddress.ip_address(self.ip):
+        if self.ip and not ipaddress.ip_address(self.ip):
             cause = f"Not a ip4/ip6 address {cause}"
             valid = False
         if not self.token:
