@@ -62,7 +62,6 @@ class FMG:
             response_login = response_raw.json()
             assert response_login['id'] == datagram['id']
             self.session = response_login["session"]
-            log.error("HALLO")
         except requests.exceptions.ConnectionError as err:
 
             log.error(f"Connection error on login: {err}")
