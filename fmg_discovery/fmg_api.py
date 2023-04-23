@@ -86,10 +86,11 @@ class FMG:
             devices = self._get_fw_devices(adom['name'])
             for device in devices:
                 fw = Fortigate(name=device['name'], ip=device['ip'])
-                fw.labels['adom'] = adom['name']
-                fw.labels['latitude'] = device['latitude']
-                fw.labels['longitude'] = device['longitude']
-                fw.labels['platform'] = device['platform_str']
+                fw.labels['adom'] = adom['name'].strip()
+                fw.labels['latitude'] = device['latitude'].strip()
+                fw.labels['longitude'] = device['longitude'].strip()
+                fw.labels['platform'] = device['platform_str'].strip()
+                #fw.labels['name'] = device['name']
 
                 if 'labels' in adom:
                     fw.labels.update(adom['labels'])

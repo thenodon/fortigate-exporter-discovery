@@ -25,11 +25,11 @@ import ipaddress
 
 class Fortigate:
     def __init__(self, name: str, ip: str):
-        self.name: str = name
-        self.ip: str = ip
+        self.name: str = name.strip()
+        self.ip: str = ip.strip()
         self.token: str = ''
-        self.port: int = 8443
-        self.labels: Dict[str, str] = {}
+        self.port: int = 443
+        self.labels: Dict[str, str] = {'name': self.name}
         self.profile: str = ''
 
     def as_labels(self) -> Dict[str, str]:
