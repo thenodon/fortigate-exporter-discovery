@@ -25,12 +25,13 @@ from typing import List, Dict, Any
 
 import requests
 import urllib3
-import logging
+
 from fmg_discovery.fw import Fortigate
+from fmg_discovery.fmglogging import Log
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-log = logging.getLogger(__name__)
+log = Log(__name__)
 
 
 class FMG:
@@ -61,8 +62,9 @@ class FMG:
             response_login = response_raw.json()
             assert response_login['id'] == datagram['id']
             self.session = response_login["session"]
-
+            log.error("HALLO")
         except requests.exceptions.ConnectionError as err:
+
             log.error(f"Connection error on login: {err}")
         except Exception as err:
             log.error(f"Error on login: {err}")
@@ -76,7 +78,7 @@ class FMG:
             self._fmg_login()
         # Get all Firewalls in this ADOM
         if not self.fmg_configuration['fmg']['adoms']:
-            log.warning(f"ADOM is not configured. No data received from FortiManager.")
+            log.warn(f"ADOM is not configured. No data received from FortiManager.")
             return {}
         # Loop for each adom
         all_adom_devices = {}
@@ -98,6 +100,11 @@ class FMG:
                     fw.port = adom['fortigate']['port']
                 if 'profile' in adom['fortigate']:
                     fw.profile = adom['fortigate']['profile']
+                valid, cause = fw.valid()
+                if not valid:
+                    log.warn_fmt({'operation': 'fw_validate', 'adom': adom['name'], 'fw': fw.name, "status": 'false',
+                                  "cause": cause})
+                    continue
                 all_devices.append(fw)
             all_adom_devices[adom['name']] = all_devices
 

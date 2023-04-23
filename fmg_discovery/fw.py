@@ -19,7 +19,8 @@
 
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
+import ipaddress
 
 
 class Fortigate:
@@ -39,6 +40,24 @@ class Fortigate:
         if self.profile:
             labels['profile'] = self.profile
         return labels
+
+    def valid(self) -> Tuple[bool, str]:
+        valid = True
+        cause = ""
+        if not self.name:
+            cause = f"Missing name {cause}"
+            valid = False
+        if not self.ip:
+            cause = f"Missing ip {cause}"
+            valid = False
+        if not ipaddress.ip_address(self.ip):
+            cause = f"Not a ip4/ip6 address {cause}"
+            valid = False
+        if not self.token:
+            cause = f"Missing token {cause}"
+            valid = False
+
+        return valid, cause
 
     def as_prometheus_file_sd_entry(self) -> Dict[str, Any]:
         return {'targets': [f"https://{self.ip}:{self.port}"], 'labels': self.as_labels()}

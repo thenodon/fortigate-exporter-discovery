@@ -25,6 +25,10 @@ import yaml
 
 from fmg_discovery.environments import FMG_DISCOVERY_PROMETHEUS_SD_FILE_DIRECTORY, FMG_DISCOVERY_CONFIG
 from fmg_discovery.fmg_api import FMG
+from fmg_discovery.fmglogging import Log
+
+
+log = Log(__name__)
 
 
 def file_service_discovery():
@@ -57,6 +61,7 @@ def file_service_discovery():
         # Generate configuration
         with open(f"{os.getenv(FMG_DISCOVERY_PROMETHEUS_SD_FILE_DIRECTORY)}/{adom_name}.yaml", 'w') as config_file:
             try:
-                yaml.safe_dump(prometheus_file_sd[adom_name], config_file)
+                if adom_name in prometheus_file_sd:
+                    yaml.safe_dump(prometheus_file_sd[adom_name], config_file)
             except yaml.YAMLError as err:
                 print(err)

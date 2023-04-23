@@ -29,7 +29,7 @@ from typing import List, Any, Annotated, Dict
 import uvicorn
 import yaml
 
-from fastapi import FastAPI, Response, Depends, HTTPException, status
+from fastapi import FastAPI, Request, Response, Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 import logging.config as lc
@@ -69,9 +69,17 @@ app = FastAPI()
 security = HTTPBasic()
 
 
-def basic_auth(credentials: Annotated[HTTPBasicCredentials, Depends(security)]) -> bool:
-    if not os.getenv(FMG_DISCOVERY_BASIC_AUTH_ENABLED):
+async def optional_security(request: Request):
+    if os.getenv(FMG_DISCOVERY_BASIC_AUTH_ENABLED) and os.getenv(FMG_DISCOVERY_BASIC_AUTH_ENABLED) == "true":
+        return await security(request)
+    else:
+        return None
+
+
+async def basic_auth(credentials: Annotated[HTTPBasicCredentials, Depends(optional_security)]) -> bool:
+    if not os.getenv(FMG_DISCOVERY_BASIC_AUTH_ENABLED) or os.getenv(FMG_DISCOVERY_BASIC_AUTH_ENABLED) == "false":
         return True
+
     current_username_bytes = credentials.username.encode("utf8")
     correct_username_bytes = bytes(os.getenv(FMG_DISCOVERY_BASIC_AUTH_USERNAME), 'utf-8')
     is_correct_username = secrets.compare_digest(
@@ -130,7 +138,7 @@ class Cache(metaclass=Singleton):
         if time.time() < self._expire:
             log.info_fmt({"operation": "cache", "hit": True})
             return self._cache
-        log.info_fmt({"operation": "cache", "hist": False})
+        log.info_fmt({"operation": "cache", "hit": False})
         return {}
 
 
