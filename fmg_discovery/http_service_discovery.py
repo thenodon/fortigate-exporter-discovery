@@ -17,29 +17,41 @@
     You should have received a copy of the GNU General Public License
     along with fortigate-exporter-discovery.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
+    The following functions are from the project https://github.com/prometheus/client_python and under license
+    https://github.com/prometheus/client_python/blob/master/LICENSE. The reason they are copied is due to the async
+    implementation in the fortigate_exporter
+    - floatToGoString
+    - generate_latest
 
-import secrets
+"""
 import json
+import logging.config as lc
+import math
 import os
+import secrets
 import sys
 import time
 from typing import List, Any, Annotated, Dict
 
 import uvicorn
 import yaml
-
 from fastapi import FastAPI, Request, Response, Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from prometheus_client import CollectorRegistry, Gauge
+from prometheus_client.exposition import CONTENT_TYPE_LATEST
+from prometheus_client.utils import INF, MINUS_INF
+from prometheus_fastapi_instrumentator import Instrumentator
 
-import logging.config as lc
-
-from fmg_discovery.environments import FMG_DISCOVERY_CONFIG
-from fmg_discovery.fmg_api import FMG
-from fmg_discovery.fmglogging import Log
 from fmg_discovery.environments import FMG_DISCOVERY_BASIC_AUTH_USERNAME, FMG_DISCOVERY_BASIC_AUTH_PASSWORD, \
     FMG_DISCOVERY_BASIC_AUTH_ENABLED, FMG_DISCOVERY_LOG_LEVEL, FMG_DISCOVERY_HOST, FMG_DISCOVERY_PORT, \
     FMG_DISCOVERY_CACHE_TTL
+
+from fmg_discovery.environments import FMG_DISCOVERY_CONFIG
+from fmg_discovery.exceptions import FmgException
+from fmg_discovery.fmg_api import FMG
+from fmg_discovery.fmg_collector import FmgCollector
+from fmg_discovery.fmglogging import Log
+from fmg_discovery.fw import Fortigate
 
 FORMAT = 'timestamp="%(asctime)s" level=%(levelname)s module="%(module)s" %(message)s'
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
@@ -65,6 +77,9 @@ MIME_TYPE_APPLICATION_JSON = 'application/json'
 log = Log(__name__)
 
 app = FastAPI()
+
+# Enable auto instrumentation
+Instrumentator().instrument(app).expose(app=app, endpoint="/exporter-metrics")
 
 security = HTTPBasic()
 
@@ -130,11 +145,11 @@ class Cache(metaclass=Singleton):
         self._expire: int = 0
         self._cache: Dict[str, Any] = {}
 
-    def put(self, data: Dict[str, Any]):
+    def put(self, data: Dict[str, List[Fortigate]]):
         self._expire = time.time() + self._ttl
         self._cache = data
 
-    def get(self):
+    def get(self) -> Dict[str, List[Fortigate]]:
         if time.time() < self._expire:
             log.info_fmt({"operation": "cache", "hit": True})
             return self._cache
@@ -142,9 +157,130 @@ class Cache(metaclass=Singleton):
         return {}
 
 
+def floatToGoString(d):
+    d = float(d)
+    if d == INF:
+        return '+Inf'
+    elif d == MINUS_INF:
+        return '-Inf'
+    elif math.isnan(d):
+        return 'NaN'
+    else:
+        s = repr(d)
+        dot = s.find('.')
+        # Go switches to exponents sooner than Python.
+        # We only need to care about positive values for le/quantile.
+        if d > 0 and dot > 6:
+            mantissa = '{0}.{1}{2}'.format(s[0], s[1:dot], s[dot + 1:]).rstrip('0.')
+            return '{0}e+0{1}'.format(mantissa, dot - 1)
+        return s
+
+
+def generate_latest(metrics_list: list):
+    """
+    Returns the metrics from the registry in text format as a string
+    :param metrics_list:
+    :return:
+    """
+    """"""
+
+    def sample_line(line):
+        if line.labels:
+            labelstr = '{{{0}}}'.format(','.join(
+                ['{0}="{1}"'.format(
+                    k, v.replace('\\', r'\\').replace('\n', r'\n').replace('"', r'\"'))
+                    for k, v in sorted(line.labels.items())]))
+        else:
+            labelstr = ''
+        timestamp = ''
+        if line.timestamp is not None:
+            # Convert to milliseconds.
+            timestamp = ' {0:d}'.format(int(float(line.timestamp) * 1000))
+        return '{0}{1} {2}{3}\n'.format(
+            line.name, labelstr, floatToGoString(line.value), timestamp)
+
+    output = []
+    for metric in metrics_list:
+        try:
+            mname = metric.name
+            mtype = metric.type
+            # Munging from OpenMetrics into Prometheus format.
+            if mtype == 'counter':
+                mname = mname + '_total'
+            elif mtype == 'info':
+                mname = mname + '_info'
+                mtype = 'gauge'
+            elif mtype == 'stateset':
+                mtype = 'gauge'
+            elif mtype == 'gaugehistogram':
+                # A gauge histogram is really a gauge,
+                # but this captures the structure better.
+                mtype = 'histogram'
+            elif mtype == 'unknown':
+                mtype = 'untyped'
+
+            output.append('# HELP {0} {1}\n'.format(
+                mname, metric.documentation.replace('\\', r'\\').replace('\n', r'\n')))
+            output.append('# TYPE {0} {1}\n'.format(mname, mtype))
+
+            om_samples = {}
+            for s in metric.samples:
+                for suffix in ['_created', '_gsum', '_gcount']:
+                    if s.name == metric.name + suffix:
+                        # OpenMetrics specific sample, put in a gauge at the end.
+                        om_samples.setdefault(suffix, []).append(sample_line(s))
+                        break
+                else:
+                    output.append(sample_line(s))
+        except Exception as exception:
+            exception.args = (exception.args or ('',)) + (metric,)
+            raise
+
+        for suffix, lines in sorted(om_samples.items()):
+            output.append('# HELP {0}{1} {2}\n'.format(metric.name, suffix,
+                                                       metric.documentation.replace('\\', r'\\').replace('\n', r'\n')))
+            output.append('# TYPE {0}{1} gauge\n'.format(metric.name, suffix))
+            output.extend(lines)
+    return ''.join(output).encode('utf-8')
+
+
 @app.get('/')
-def hello_world():
+def alive(request: Request):
+    request.app.state.users_events_counter.inc({"path": request.scope["path"]})
     return Response("fmg_discovery alive!", status_code=status.HTTP_200_OK, media_type=MIME_TYPE_TEXT_HTML)
+
+
+@app.get('/metrics')
+async def get_metrics():
+    start_time = time.time()
+    cache = Cache()
+    fws = cache.get()
+    if not fws:
+        fmg = FMG(Config().get())
+        fws = fmg.get_fmg_devices()
+        cache.put(fws)
+
+    registry = CollectorRegistry()
+    try:
+        fmg_collector = FmgCollector(fws)
+
+        registry.register(fmg_collector)
+
+        duration = Gauge('fmg_scrape_duration_seconds', 'Time spent processing request', registry=registry)
+
+        duration.set(time.time() - start_time)
+
+        fortigate_response = generate_latest(await fmg_collector.collect())
+
+        duration.set(time.time() - start_time)
+        return Response(fortigate_response, status_code=200, media_type=CONTENT_TYPE_LATEST)
+    except FmgException as err:
+        log.error(err.message)
+        return Response(err.message, status_code=err.status, media_type=MIME_TYPE_TEXT_HTML)
+    except Exception as err:
+        log.error(f"Failed to create metrics - err: {str(err)}")
+        return Response(f"Internal server error for - please check logs", status_code=500,
+                        media_type=MIME_TYPE_TEXT_HTML)
 
 
 @app.get('/prometheus-sd-targets')
