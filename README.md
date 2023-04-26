@@ -6,8 +6,11 @@ fortigate-exporter-discovery
 # Overview
 
 The fortigate-exporter-discovery is a Prometheus discovery tool that use a Fortimanager instance
-to get fortigate's based on an adom. 
+to get fortigate's based on adoms. 
 It works both for file and http service discovery.
+
+The tool can also work as an exporter for metrics related to the relation between a Fortimanager and its Fortigate's.
+This is only supported when run in `server` mode.
 
 The tool work with the [fortigate-exporter](https://github.com/bluecmd/fortigate_exporter).
 > It requires that the following pull request is accepted https://github.com/bluecmd/fortigate_exporter/pull/206 or 
@@ -78,11 +81,28 @@ FMG_DISCOVERY_BASIC_AUTH_PASSWORD=bar
 FMG_DISCOVERY_LOG_LEVEL=INFO
 python -m fmg_discovery --server
 ```
-Test by curl
+Test discovery by curl
 
 ```shell
 curl -ufoo:bar localhost:9693/prometheus-sd-targets
 ```
+
+Test exporter by curl
+
+```shell
+curl -ufoo:bar localhost:9693/metrics
+# HELP fmg_conf_status Configuration status 1==insync 0==all other states
+# TYPE fmg_conf_status gauge
+....
+# HELP fmg_conn_status Connection status 1==up 0==all other states
+# TYPE fmg_conn_status gauge
+....
+# HELP fmg_conn_mode Connection mode 1==active 0==all other states
+# TYPE fmg_conn_mode gauge
+....
+
+```
+
 # Prometheus job configuration
 
 Example:

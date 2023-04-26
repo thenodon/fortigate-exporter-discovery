@@ -26,7 +26,7 @@ from typing import List, Dict, Any
 import requests
 import urllib3
 
-from fmg_discovery.fw import Fortigate
+from fmg_discovery.fw import Fortigate, fw_factory
 from fmg_discovery.fmglogging import Log
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -85,21 +85,7 @@ class FMG:
             all_devices = []
             devices = self._get_fw_devices(adom['name'])
             for device in devices:
-                fw = Fortigate(name=device['name'], ip=device['ip'])
-                fw.labels['adom'] = adom['name'].strip()
-                fw.labels['latitude'] = device['latitude'].strip()
-                fw.labels['longitude'] = device['longitude'].strip()
-                fw.labels['platform'] = device['platform_str'].strip()
-                #fw.labels['name'] = device['name']
-
-                if 'labels' in adom:
-                    fw.labels.update(adom['labels'])
-                if 'token' in adom['fortigate']:
-                    fw.token = adom['fortigate']['token']
-                if 'port' in adom['fortigate']:
-                    fw.port = adom['fortigate']['port']
-                if 'profile' in adom['fortigate']:
-                    fw.profile = adom['fortigate']['profile']
+                fw = fw_factory(adom, device)
                 valid, cause = fw.valid()
                 if not valid:
                     log.warn_fmt({'operation': 'fw_validate', 'adom': adom['name'], 'fw': fw.name, "status": 'false',
