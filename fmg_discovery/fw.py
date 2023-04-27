@@ -72,6 +72,9 @@ class Fortigate:
         if self.ip and not ipaddress.ip_address(self.ip):
             cause = f"Not a ip4/ip6 address {cause}"
             valid = False
+        if self.ip and self.ip == '0.0.0.0':
+            cause = f"IP is 0.0.0.0 {cause}"
+            valid = False
         if not self.token:
             cause = f"Missing token {cause}"
             valid = False
