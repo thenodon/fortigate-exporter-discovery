@@ -50,7 +50,7 @@ class Fortigate:
         labels = self.labels.copy()
         labels['adom'] = self.adom
         labels['latitude'] = self.latitude
-        labels['latitude'] = self.latitude
+        labels['longitude'] = self.longitude
         labels['platform'] = self.platform
 
         if self.token:
@@ -85,11 +85,10 @@ class Fortigate:
 def fw_factory(adom, device) -> Fortigate:
     fw = Fortigate(name=device['name'], ip=device['ip'])
     # Discovery
-    fw.adom = adom['name'].strip()
     fw.latitude = device['latitude'].strip()
     fw.longitude = device['longitude'].strip()
     fw.platform = device['platform_str'].strip()
-    # fw.labels['name'] = device['name']
+
     if 'labels' in adom:
         fw.labels.update(adom['labels'])
     if 'token' in adom['fortigate']:
