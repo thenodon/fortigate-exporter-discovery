@@ -91,7 +91,7 @@ def fw_factory(adom, device) -> Fortigate:
     fw.latitude = device['latitude'].strip()
     fw.longitude = device['longitude'].strip()
     fw.platform = device['platform_str'].strip()
-
+    fw.adom = adom['name']
     if 'labels' in adom:
         fw.labels.update(adom['labels'])
     if 'token' in adom['fortigate']:
