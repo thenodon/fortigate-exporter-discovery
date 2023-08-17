@@ -167,3 +167,4 @@ class FMG:
             log.error(f"Connection Error on data retrieval: {err}")
         except Exception as err:
             log.error(f"Error on data retrieval: {err}")
+        return devices
