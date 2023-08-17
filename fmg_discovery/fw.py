@@ -23,7 +23,13 @@ from typing import Dict, List, Any, Tuple
 import ipaddress
 
 
+def meta_label_name(name: str) -> str:
+    return f"{Fortigate.meta_label_prefix}{name}"
+
+
 class Fortigate:
+    meta_label_prefix = '__meta_fortigate_'
+
     def __init__(self, name: str, ip: str):
         self.name: str = name.strip()
         self.ip: str = ip.strip()
@@ -33,7 +39,7 @@ class Fortigate:
         self.latitude: str = ''
         self.longitude: str = ''
         self.platform: str = ''
-        self.labels: Dict[str, str] = {'name': self.name}
+        self.labels: Dict[str, str] = {meta_label_name('name'): self.name}
         self.profile: str = ''
 
         self.conf_status: str = ''
@@ -48,15 +54,15 @@ class Fortigate:
     def _as_labels(self) -> Dict[str, str]:
 
         labels = self.labels.copy()
-        labels['adom'] = self.adom
-        labels['latitude'] = self.latitude
-        labels['longitude'] = self.longitude
-        labels['platform'] = self.platform
+        labels[meta_label_name('adom')] = self.adom
+        labels[meta_label_name('latitude')] = self.latitude
+        labels[meta_label_name('longitude')] = self.longitude
+        labels[meta_label_name('platform')] = self.platform
 
         if self.token:
-            labels['token'] = self.token
+            labels[meta_label_name('token')] = self.token
         if self.profile:
-            labels['profile'] = self.profile
+            labels[meta_label_name('profile')] = self.profile
 
         return labels
 
@@ -93,7 +99,8 @@ def fw_factory(adom, device) -> Fortigate:
     fw.platform = device['platform_str'].strip()
     fw.adom = adom['name']
     if 'labels' in adom:
-        fw.labels.update(adom['labels'])
+        for label_key, label_value in adom['labels'].items():
+            fw.labels[meta_label_name(label_key)] = label_value
     if 'token' in adom['fortigate']:
         fw.token = adom['fortigate']['token']
     if 'port' in adom['fortigate']:
