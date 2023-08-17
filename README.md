@@ -16,6 +16,9 @@ The tool work with the [fortigate-exporter](https://github.com/bluecmd/fortigate
 > It requires that the following pull request is accepted https://github.com/bluecmd/fortigate_exporter/pull/206 or 
 > you can use https://github.com/thenodon/fortigate_exporter. 
 
+# Labels naming (since 0.5.0)
+All labels are returned prefixed as `__meta_fortigate_`
+
 # Configuration
 
 The configuration file include the credentials for the Fortimanager and the configuration for each adom.
@@ -118,17 +121,41 @@ Example:
       profile:
       - fs124e
     relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [token]
-      target_label: __param_token
-    - source_labels: [__param_target]
-      regex: '(?:.+)(?::\/\/)([^:]*).*'
-      target_label: instance
-    - target_label: __address__
-      replacement: '[::1]:9710'
-    - action: labeldrop
-      regex: token
+      - source_labels:
+          - __meta_fortigate_name
+        action: replace
+        target_label: name
+      - source_labels:
+          - __meta_fortigate_zone
+        action: replace
+        target_label: zone
+      - source_labels:
+          - __meta_fortigate_adom
+        action: replace
+        target_label: adom
+      - source_labels:
+          - __meta_fortigate_latitude
+        action: replace
+        target_label: latitude
+      - source_labels:
+          - __meta_fortigate_longitude
+        action: replace
+        target_label: longitude
+      - source_labels:
+          - __meta_fortigate_platform
+        action: replace
+        target_label: platform    
+
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__meta_fortigate_token]
+        target_label: __param_token
+      - source_labels: [__param_target]
+        regex: '(?:.+)(?::\/\/)([^:]*).*'
+        target_label: instance
+      - target_label: __address__
+        replacement: '[::1]:9710'
+      
 ```
 Make sure to use the last labeldrop on the `token` label so that the tokens is not be part of your time series.
 > Since `token` is a label it will be shown in the Prometheus webgui at `http://<your prometheus>:9090/targets`.
